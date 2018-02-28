@@ -107,6 +107,8 @@ public class MetricType implements ChronixType {
                 return new MovingAverage(args);
             case "smovavg":
                 return new SampleMovingAverage(args);
+            case "savgbckt":
+                return new SampleAverageBucket(args);
             case "scale":
                 return new Scale(args);
             case "divide":

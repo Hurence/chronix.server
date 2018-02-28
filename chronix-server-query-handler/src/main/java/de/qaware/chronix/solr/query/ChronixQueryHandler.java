@@ -73,6 +73,8 @@ public class ChronixQueryHandler extends RequestHandlerBase implements SolrCoreA
 
     @Override
     public void init(PluginInfo info) {
+        init(info.initArgs);
+
         searchHandler.init(info);
         analysisHandler.init(info);
     }
