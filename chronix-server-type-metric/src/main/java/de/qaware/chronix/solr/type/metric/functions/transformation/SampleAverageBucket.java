@@ -18,45 +18,26 @@ package de.qaware.chronix.solr.type.metric.functions.transformation;
 import de.qaware.chronix.server.functions.ChronixTransformation;
 import de.qaware.chronix.server.functions.FunctionValueMap;
 import de.qaware.chronix.timeseries.MetricTimeSeries;
+import de.qaware.chronix.timeseries.dts.Point;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * The sample average bucket transformation.
  *
  * @author thomas.bailet
+ * @author amarziali
  */
 public final class SampleAverageBucket implements ChronixTransformation<MetricTimeSeries> {
 
     private final int bucketSize;
 
 
-    /**
-     * divide the points sequence into equally sized buckets
-     * select the average point of each bucket
-     *
-     * = OPENTSDB one
-     *
-     * @param rawData
-     * @param bucketSize
-     * @return
-
-    def averageBucket(rawData: List[(Long, Double)], bucketSize: Int): List[(Long, Double)] = {
-
-        // simple average to 100 data points
-        val realBucketSize = fitBucketSize(rawData, bucketSize)
-        val buckets = rawData.grouped(realBucketSize)
-
-        val averaged = buckets.map { l =>
-            val sum = l.map(_._2).sum
-            val avg = sum / l.size
-            l.head._1 -> avg
-        }
-
-        averaged.toList
-    }
-     */
     /**
      * divide the points sequence into equally sized buckets
      * select the average point of each bucket
@@ -79,58 +60,22 @@ public final class SampleAverageBucket implements ChronixTransformation<MetricTi
         // we need a sorted time series
         timeSeries.sort();
 
-        // get the raw values as arrays
-        double[] values = timeSeries.getValuesAsArray();
-        long[] times = timeSeries.getTimestampsAsArray();
+        if (timeSeries.size() > 1) {
 
-        int timeSeriesSize = timeSeries.size();
-        // remove the old values
-        timeSeries.clear();
+            final long interval = Math.round(Math.ceil((timeSeries.getEnd() - timeSeries.getStart()) / (double) bucketSize));
+            //first divide by bucket
+            Map<Long, List<Point>> pointsPerBucket = timeSeries.points().collect(Collectors.groupingBy(point -> Math.floorDiv(point.getTimestamp(), interval)));
+            timeSeries.clear();
+            //then compute new ones
+            pointsPerBucket.entrySet().stream().sorted(Map.Entry.comparingByKey())
+                    .map(entry -> new Point(entry.getKey().intValue(),
+                            Math.round(entry.getValue().stream().mapToLong(Point::getTimestamp).average().getAsDouble()),
+                            entry.getValue().stream().mapToDouble(Point::getValue).average().getAsDouble()))
+                    .forEachOrdered(point -> timeSeries.add(point.getTimestamp(), point.getValue()));
 
-        // the start is already set
-        for (int start = 0; start < timeSeriesSize; start += bucketSize) {
-
-            int end = start + bucketSize;
-            //calculate the average of the values and the time
-            evaluteAveragesAndAddToTimeSeries(timeSeries, values, times, start, end);
-
-            //check if window end is larger than time series
-            if (end + bucketSize >= timeSeriesSize) {
-                evaluteAveragesAndAddToTimeSeries(timeSeries, values, times, start + bucketSize, timeSeriesSize);
-                break;
-            }
         }
 
         functionValueMap.add(this);
-    }
-
-    /**
-     * Calculates the average time stamp and value for the given window (start, end) and adds it to the given time series
-     *
-     * @param timeSeries the time series to add the moving averages
-     * @param values     the values
-     * @param times      the time stamps
-     * @param startIdx   the start index of the window
-     * @param end        the end index of the window
-     */
-    private void evaluteAveragesAndAddToTimeSeries(MetricTimeSeries timeSeries, double[] values, long[] times, int startIdx, int end) {
-
-        //If the indices are equals, just return the value at the index position
-        if (startIdx == end) {
-            timeSeries.add(times[startIdx], values[startIdx]);
-        }
-
-        double valueSum = 0;
-        long timeSum = 0;
-
-
-        for (int i = startIdx; i < end; i++) {
-            valueSum += values[i];
-            timeSum += times[i];
-        }
-        int amount = end - startIdx;
-
-        timeSeries.add(timeSum / amount, valueSum / amount);
     }
 
 
