@@ -31,7 +31,8 @@ public class MetricFunctions {
     static {
         Collections.addAll(ALL, "avg", "min", "max", "dev", "p", "sum", "count", "first", "last", "range", "diff", "sdiff", "integral");
         Collections.addAll(ALL, "trend", "outlier", "frequency", "fastdtw");
-        Collections.addAll(ALL, "vector", "divide", "scale", "bottom", "top", "movavg", "smovavg", "savgbckt", "derivative", "nnderivative", "add", "sub", "timeshift", "distinct");
+        Collections.addAll(ALL, "vector", "divide", "scale", "bottom", "top", "movavg", "smovavg", "savgbckt",
+                "savgint", "derivative", "nnderivative", "add", "sub", "timeshift", "distinct");
 
     }
 }

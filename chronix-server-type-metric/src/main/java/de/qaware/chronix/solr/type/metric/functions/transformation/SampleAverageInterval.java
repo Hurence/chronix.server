@@ -26,24 +26,26 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import java.util.Optional;
 
 /**
- * The sample average bucket transformation.
+ * The sample average interval transformation.
  *
- * @author thomas.bailet
  * @author amarziali
  */
-public final class SampleAverageBucket implements ChronixTransformation<MetricTimeSeries> {
+public final class SampleAverageInterval implements ChronixTransformation<MetricTimeSeries> {
 
-    private final int bucketSize;
+    private final long interval;
+
+    private final Long maxPoints;
 
 
     /**
      * divide the points sequence into equally sized buckets
      * select the average point of each bucket
      *
-     * @param args the amount of bucketSize within a sliding window
+     * @param args the interval of the bucket (mandatory) and the optional max point to retain.
      */
-    public SampleAverageBucket(String[] args) {
-        this.bucketSize = Integer.parseInt(args[0]);
+    public SampleAverageInterval(String[] args) {
+        this.interval = Long.parseLong(args[0]);
+        this.maxPoints = args.length > 1 ? Long.parseLong(args[1]) : null;
     }
 
     /**
@@ -54,10 +56,8 @@ public final class SampleAverageBucket implements ChronixTransformation<MetricTi
      */
     @Override
     public void execute(MetricTimeSeries timeSeries, FunctionValueMap functionValueMap) {
-
         if (timeSeries.size() > 1) {
-            final long interval = Math.round(Math.ceil((timeSeries.getEnd() - timeSeries.getStart()) / (double) bucketSize));
-            SamplingUtils.sample(timeSeries, interval, Optional.empty());
+            SamplingUtils.sample(timeSeries, interval, Optional.ofNullable(maxPoints));
         }
         functionValueMap.add(this);
     }
@@ -65,7 +65,7 @@ public final class SampleAverageBucket implements ChronixTransformation<MetricTi
 
     @Override
     public String getQueryName() {
-        return "savgbckt";
+        return "savgint";
     }
 
     @Override
@@ -75,14 +75,18 @@ public final class SampleAverageBucket implements ChronixTransformation<MetricTi
 
     @Override
     public String[] getArguments() {
-        return new String[]{"bucketSize=" + bucketSize};
+        return new String[]{
+                "interval=" + interval,
+                "maxPoints=" + maxPoints
+        };
     }
 
 
     @Override
     public String toString() {
         return new ToStringBuilder(this)
-                .append("bucketSize", bucketSize)
+                .append("interval", interval)
+                .append("maxPoints", maxPoints)
                 .toString();
     }
 
@@ -97,16 +101,18 @@ public final class SampleAverageBucket implements ChronixTransformation<MetricTi
         if (obj.getClass() != getClass()) {
             return false;
         }
-        SampleAverageBucket rhs = (SampleAverageBucket) obj;
+        SampleAverageInterval rhs = (SampleAverageInterval) obj;
         return new EqualsBuilder()
-                .append(this.bucketSize, rhs.bucketSize)
+                .append(this.interval, rhs.interval)
+                .append(this.maxPoints, rhs.maxPoints)
                 .isEquals();
     }
 
     @Override
     public int hashCode() {
         return new HashCodeBuilder()
-                .append(bucketSize)
+                .append(interval)
+                .append(maxPoints)
                 .toHashCode();
     }
 }
