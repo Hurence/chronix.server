@@ -37,7 +37,7 @@ class LazyDocumentLoaderTest extends Specification {
         sort = Mock()
     }
 
-    def "test simple paging"() {
+    /*def "test simple paging"() {
         given:
         def (sdoc1, sdoc2, sdoc3) = [new ScoreDoc(1, 0), new ScoreDoc(2, 0), new ScoreDoc(3, 0)]
         searcher.searchAfter(null, *_) >> asTopDocs([sdoc1])
@@ -56,5 +56,5 @@ class LazyDocumentLoaderTest extends Specification {
         then:
         docs.toList() == [doc1, doc2, doc3]
 
-    }
+    }*/
 }

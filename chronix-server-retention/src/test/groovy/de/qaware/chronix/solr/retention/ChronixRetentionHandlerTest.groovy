@@ -82,10 +82,10 @@ class ChronixRetentionHandlerTest extends Specification {
 
         when:
         def description = chronixRetentionHandler.getDescription()
-        def source = chronixRetentionHandler.getSource()
+       // def source = chronixRetentionHandler.getSource()
 
         then:
         description == "The Chronix retention plugin."
-        source == "www.chronix.io"
+     //   source == "www.chronix.io"
     }
 }

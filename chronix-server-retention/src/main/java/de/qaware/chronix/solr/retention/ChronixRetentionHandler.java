@@ -247,10 +247,10 @@ public class ChronixRetentionHandler extends RequestHandlerBase {
         return "The Chronix retention plugin.";
     }
 
-    @Override
+/*    @Override
     public String getSource() {
         return "www.chronix.io";
     }
 
-
+*/
 }
